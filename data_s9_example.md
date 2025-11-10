@@ -114,3 +114,76 @@ z_scores(“my name is jeff”)
 z_scores(iris)
 
 z_scores(c(TRUE, TRUE, FALSE, TRUE))
+
+# Multiple output
+
+``` r
+mean_and_sd = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) == 1) {
+    stop("Cannot be computed for length 1 vectors")
+  }
+  
+  mean_x = mean(x)
+  sd_x = sd(x)
+
+  tibble(mean = mean_x, 
+       sd = sd_x)
+}
+```
+
+# Checking is work or not
+
+``` r
+mean_and_sd(x_vec)
+```
+
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  5.25  2.77
+
+# multiple input
+
+``` r
+sim_data = tibble(
+  x = rnorm(30, mean = 2, sd = 3)
+)
+
+sim_data |> 
+  summarize(
+    mu_hat = mean(x),
+    sigma_hat = sd(x)
+  )
+```
+
+    ## # A tibble: 1 × 2
+    ##   mu_hat sigma_hat
+    ##    <dbl>     <dbl>
+    ## 1   2.40      2.39
+
+## Change to function
+
+``` r
+sim_mean_sd = function(n, mu=4, sigma=3) {
+  
+  sim_data = tibble(
+    x = rnorm(n, mean = mu, sd = sigma),
+  )
+  
+  sim_data |> 
+    summarize(
+      mu_hat = mean(x),
+      sigma_hat = sd(x)
+    )
+}
+
+sim_mean_sd(100)
+```
+
+    ## # A tibble: 1 × 2
+    ##   mu_hat sigma_hat
+    ##    <dbl>     <dbl>
+    ## 1   3.83      2.85
