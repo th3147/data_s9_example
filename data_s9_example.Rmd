@@ -1,0 +1,77 @@
+---
+title: "data_s9_example"
+author: "Te-Hsuan Huang"
+date: "2025-11-10"
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+library(rvest)
+
+set.seed(1)
+```
+# Z score
+```{r}
+x_vec = rnorm(30, mean = 5, sd = 3)
+
+(x_vec - mean(x_vec)) / sd(x_vec)
+```
+
+# writing a function
+* if you did not put Z by itself, the number will not show up
+```{r}
+z_scores = function(x) {
+  
+  z = (x - mean(x)) / sd(x)
+  z
+  
+}
+
+z_scores(x_vec)
+```
+
+# Try other way
+* since we cannot calculate one number for SD
+
+* we cannot calculate for a words and dataset
+
+z_scores(3)
+
+mean(3)
+sd(3)
+
+z_scores("my name is jeff")
+
+z_scores(iris)
+
+z_scores(c(TRUE, TRUE, FALSE, TRUE))
+
+# Adding warning
+```{r}
+z_scores = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) ==1) {
+    stop("Z scores cannot be computed for length 1 vectors")
+  }
+  
+  z = mean(x) / sd(x)
+  
+  z
+}
+```
+
+
+# Checking one more time
+z_scores(3)
+
+mean(3)
+sd(3)
+
+z_scores("my name is jeff")
+
+z_scores(iris)
+
+z_scores(c(TRUE, TRUE, FALSE, TRUE))
