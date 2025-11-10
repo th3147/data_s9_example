@@ -1,0 +1,90 @@
+---
+title: "Iteration and List Columns"
+author: "Te-Hsuan Huang"
+date: "2025-11-10"
+output: github_document
+---
+
+# Loading 
+```{r}
+library(tidyverse)
+library(rvest)
+
+set.seed(1)
+```
+
+# List
+u can put anything in the list
+```{r}
+bunch=list(
+vec_numeric = 5:8,
+vec_char = c("My", "name", "is", "Jeff"),
+vec_logical = c(TRUE, TRUE, TRUE, FALSE),
+mat=matrix(1:8, nrow=4, ncol=2),
+summary=summary(rnorm(100))
+)
+
+bunch
+```
+
+# output the dataset
+```{r}
+bunch$vec_numeric
+
+bunch[[1]]
+
+bunch[["vec_numeric"]]
+bunch[["vec_numeric"]][1:2]
+
+mean(bunch[["vec_numeric"]])
+```
+
+# for loops
+
+step1: create a new list
+```{r}
+list_norms = 
+  list(
+    a = rnorm(20, 3, 1),
+    b = rnorm(20, 0, 5),
+    c = rnorm(20, 10, .2),
+    d = rnorm(20, -3, 1)
+  )
+
+```
+
+step2: build the function
+```{r}
+mean_and_sd = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) == 1) {
+    stop("Cannot be computed for length 1 vectors")
+  }
+  
+  mean_x = mean(x)
+  sd_x = sd(x)
+
+  tibble(
+    mean = mean_x, 
+    sd = sd_x
+  )
+}
+```
+
+step3: I can apply that function to each list element.
+```{r}
+mean_and_sd(list_norms[[1]])
+mean_and_sd(list_norms[[2]])
+```
+
+step3: let's use alternative way, for loop
+```{r}
+output = vector("list", length = 4)
+
+for (i in 1:4) {
+  output[[i]] = mean_and_sd(list_norms[[i]])
+}
+```
+
