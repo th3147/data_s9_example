@@ -167,3 +167,29 @@ for (i in 1:4) {
   output[[i]] = mean_and_sd(list_norms[[i]])
 }
 ```
+
+step3: let’s use alternative way, map
+
+``` r
+output2 = map(list_norms, mean_and_sd)
+```
+
+### What if u want to do different function
+
+``` r
+output3 = map(list_norms, median)
+```
+
+### Make a dataframe
+
+Purpose of .id: It is typically used with functions that return a data
+frame (map_dfr()) to create a new column in the resulting data frame.
+This column records the name or index of the element from the original
+input list (list_norms) that produced that row of data.
+
+``` r
+output4 = map_dbl(list_norms, median, .id = "input")
+output5 = map_dfr(list_norms, mean_and_sd, .id = "input")
+output6 = map_df(list_norms, mean_and_sd)
+output7 = map_df(list_norms, mean_and_sd, .id = "ID")
+```
