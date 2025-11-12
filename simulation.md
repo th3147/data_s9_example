@@ -1,0 +1,315 @@
+Simulation
+================
+Te-Hsuan Huang
+2025-11-12
+
+``` r
+library(tidyverse)
+```
+
+    ## Warning: package 'tidyverse' was built under R version 4.5.2
+
+    ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+    ## ✔ dplyr     1.1.4     ✔ readr     2.1.5
+    ## ✔ forcats   1.0.0     ✔ stringr   1.5.1
+    ## ✔ ggplot2   3.5.2     ✔ tibble    3.3.0
+    ## ✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+    ## ✔ purrr     1.1.0     
+    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ✖ dplyr::filter() masks stats::filter()
+    ## ✖ dplyr::lag()    masks stats::lag()
+    ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+
+``` r
+set.seed(1)
+```
+
+# Simulation
+
+``` r
+sim_mean_sd = function(n, mu = 2, sigma = 3) {
+  
+  sim_data = tibble(
+    x = rnorm(n, mean = mu, sd = sigma),
+  )
+  
+  sim_data |> 
+    summarize(
+      mu_hat = mean(x),
+      sigma_hat = sd(x)
+    )
+}
+```
+
+# Test the function work or not
+
+``` r
+sim_mean_sd(30)
+```
+
+    ## # A tibble: 1 × 2
+    ##   mu_hat sigma_hat
+    ##    <dbl>     <dbl>
+    ## 1   2.25      2.77
+
+# Let’s simulate a lot!
+
+``` r
+output = vector("list", 100)
+
+for (i in 1:100) {
+  output[[i]] = sim_mean_sd(30)
+}
+
+sim_results = bind_rows(output)
+```
+
+# Use the alternative way
+
+``` r
+rerun(100,sim_mean_sd(30)) |> 
+  bind_rows()
+```
+
+    ## Warning: `rerun()` was deprecated in purrr 1.0.0.
+    ## ℹ Please use `map()` instead.
+    ##   # Previously
+    ##   rerun(100, sim_mean_sd(30))
+    ## 
+    ##   # Now
+    ##   map(1:100, ~ sim_mean_sd(30))
+    ## This warning is displayed once every 8 hours.
+    ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+    ## generated.
+
+    ## # A tibble: 100 × 2
+    ##    mu_hat sigma_hat
+    ##     <dbl>     <dbl>
+    ##  1   2.47      3.11
+    ##  2   3.39      3.22
+    ##  3   2.24      2.97
+    ##  4   2.61      3.72
+    ##  5   1.37      3.06
+    ##  6   3.25      2.67
+    ##  7   2.06      3.09
+    ##  8   2.27      2.99
+    ##  9   2.46      3.57
+    ## 10   2.10      3.26
+    ## # ℹ 90 more rows
+
+# Draw the result
+
+``` r
+sim_results |> 
+  ggplot(aes(x = mu_hat)) + 
+  geom_density()
+```
+
+![](simulation_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+# Try to use map function
+
+``` r
+sim_results_df = 
+  expand_grid(
+    sample_size = 30,
+    iter = 1:100
+  ) |> 
+  mutate(
+    estimate_df = map(sample_size, sim_mean_sd)
+  ) |> 
+  unnest(estimate_df)
+```
+
+# Try to make sample size 30*100 times and sample size 60*100 times
+
+``` r
+sim_results_df = 
+  expand_grid(
+    sample_size = c(30,60, 90),
+    iter = 1:1000
+  ) |> 
+  mutate(
+    estimate_df = map(sample_size, sim_mean_sd)
+  ) |> 
+  unnest(estimate_df)
+```
+
+# violin plot
+
+``` r
+sim_results_df |> 
+  mutate(
+    sample_size = str_c("n = ", sample_size),
+    sample_size = fct_inorder(sample_size)) |> 
+  ggplot(aes(x = sample_size, y = mu_hat, fill = sample_size)) + 
+  geom_violin()
+```
+
+![](simulation_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+# try to summarize
+
+``` r
+sim_results_df |> 
+  pivot_longer(
+    mu_hat:sigma_hat,
+    names_to = "parameter", 
+    values_to = "estimate") |> 
+  group_by(parameter, sample_size) |> 
+  summarize(
+    emp_mean = mean(estimate),
+    emp_se = sd(estimate)) |> 
+  knitr::kable(digits = 3)
+```
+
+    ## `summarise()` has grouped output by 'parameter'. You can override using the
+    ## `.groups` argument.
+
+| parameter | sample_size | emp_mean | emp_se |
+|:----------|------------:|---------:|-------:|
+| mu_hat    |          30 |    2.001 |  0.538 |
+| mu_hat    |          60 |    1.992 |  0.387 |
+| mu_hat    |          90 |    2.001 |  0.313 |
+| sigma_hat |          30 |    2.974 |  0.392 |
+| sigma_hat |          60 |    2.998 |  0.267 |
+| sigma_hat |          90 |    2.996 |  0.227 |
+
+# A simple linear regression
+
+``` r
+sim_regression = function(n, beta0 = 2, beta1 = 3) {
+  
+  sim_data = 
+    tibble(
+      x = rnorm(n, mean = 1, sd = 1),
+      y = beta0 + beta1 * x + rnorm(n, 0, 1)
+    )
+  
+  ls_fit = lm(y ~ x, data = sim_data)
+  
+  tibble(
+    beta0_hat = coef(ls_fit)[1],
+    beta1_hat = coef(ls_fit)[2]
+  )
+}
+```
+
+# try the function work or not
+
+``` r
+sim_regression(30)
+```
+
+    ## # A tibble: 1 × 2
+    ##   beta0_hat beta1_hat
+    ##       <dbl>     <dbl>
+    ## 1      2.11      3.00
+
+# try it bunch of time
+
+``` r
+sim_results_df = 
+  expand_grid(
+    sample_size = 30,
+    iter = 1:500
+  ) |> 
+  mutate(
+    estimate_df = map(sample_size, sim_regression)
+  ) |> 
+  unnest(estimate_df)
+
+sim_results_df |> 
+  ggplot(aes(x = beta0_hat, y = beta1_hat)) + 
+  geom_point()
+```
+
+![](simulation_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+# Birthday example
+
+if it is repeat, it will show true; but if it is not repeat, it will
+show false
+
+``` r
+birth=sample(1:365, 50, replace=TRUE)
+
+repeated=length(unique(birth))<50
+
+repeated
+```
+
+    ## [1] TRUE
+
+# change to function
+
+``` r
+simulate_birthday_match <- function(n) {
+  # 1. Randomly draw n birthdays from 1 to 365
+  # The 'replace = TRUE' is crucial, as people can share a birthday
+  birthdays <- sample(1:365, size = n, replace = TRUE)
+
+  # 2. Check for duplicate birthdays
+  # unique() returns only the distinct elements
+  # If length(birthdays) != length(unique(birthdays)), then duplicates exist.
+  has_duplicate <- length(birthdays) != length(unique(birthdays))
+
+  # 3. Return TRUE (match found) or FALSE (no match)
+  return(has_duplicate)
+}
+```
+
+# try more time
+
+``` r
+# Define parameters
+min_n <- 2
+max_n <- 50
+n_simulations <- 10000
+
+# Create a sequence of group sizes to test
+group_sizes <- min_n:max_n
+
+# Initialize a vector to store the calculated probabilities
+probabilities <- numeric(length(group_sizes))
+
+# Run the simulation for each group size
+for (i in 1:length(group_sizes)) {
+  n <- group_sizes[i]
+
+  # Run the simulation n_simulations times for the current group size
+  results <- replicate(n_simulations, simulate_birthday_match(n))
+
+  # Compute the probability:
+  # The mean() of a logical vector (TRUE/FALSE) calculates the proportion of TRUEs
+  probability_of_match <- mean(results)
+
+  # Store the result
+  probabilities[i] <- probability_of_match
+}
+
+# Create a data frame for plotting (good practice)
+probability_data <- data.frame(
+  group_size = group_sizes,
+  probability = probabilities
+)
+```
+
+# draw the plot
+
+``` r
+# Make a plot
+plot(probability_data$group_size, probability_data$probability,
+     type = "b", # 'b' for both points and lines
+     pch = 19,   # Solid circles for points
+     col = "blue",
+     main = "Probability of Shared Birthday vs. Group Size (Simulated)",
+     xlab = "Group Size (n)",
+     ylab = "P(At least two people share a birthday)",
+     ylim = c(0, 1) # Ensure the y-axis spans 0 to 1
+)
+abline(h = 0.5, col = "red", lty = 2) # Add a line at P=0.5
+text(20, 0.55, "50% Probability Line", col = "red", pos = 4)
+```
+
+![](simulation_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
